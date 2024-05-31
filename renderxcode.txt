@@ -1,0 +1,115 @@
+How to Render Hex Color Codes in Terminal and Generate Color Variants
+Introduction
+
+In this tutorial, you'll learn how to create a Bash script that renders hex color codes as color blocks in the terminal. Additionally, you'll be able to generate color variants based on a provided color.
+Prerequisites
+
+Make sure you have a basic understanding of the Bash scripting language and how to navigate the terminal.
+
+Step 1: $ nano ~./bashrc
+
+Scroll down to the bottom and add the following script.
+
+Step 2: Create the Function within .bashrc
+
+The .bashrc file is a script that Bash runs whenever it starts a new interactive shell session. To make the renderxcolor function available in every new shell session, add it to your .bashrc file:
+
+Open a terminal instance and type:
+
+nano ~/.bashrc
+
+Scroll to the bottom of the file and paste the following function definition:
+
+# Generate specified number of color variants of the provided color
+
+generate_color_variants() {
+    # Extract the main color components (RGB) from the provided hex color
+    main_color="$1"  # Expecting the color without a "#"
+    num_variants="$2"
+    if ((num_variants < 1 || num_variants > 40)); then
+        echo "Error: Number of variants must be between 1 and 40."
+        return 1
+    fi
+
+    # Convert hexadecimal RGB values to decimal
+    r=$(printf '%d' "0x${main_color:0:2}")
+    g=$(printf '%d' "0x${main_color:2:2}")
+    b=$(printf '%d' "0x${main_color:4:2}")
+
+    # Loop to generate color variants
+    for ((i = 0; i < num_variants; i++)); do
+        # Adjust the RGB values by a small amount to create color variants
+        new_r=$(( (r + i * 1) % 256 ))
+        new_g=$(( (g + i * 0) % 256 ))
+        new_b=$(( (b + i * 2) % 256 ))
+
+        # Combine the new RGB values into a hexadecimal color code
+        new_color=$(printf "%02x%02x%02x" $new_r $new_g $new_b)
+
+        # Print the hexadecimal color code and render the color block in the terminal
+        echo -n "$new_color: "
+        perl -e 'print "\e[48;2;".join(";",unpack("C*",pack("H*","'"$new_color"'")))."m   \e[49m "'
+        
+        # Add newline after every 4 color blocks
+        if (( (i + 1) % 4 == 0 )); then
+            echo
+        else
+            echo -n "  "  # Separate color blocks with spaces
+        fi
+    done
+}
+
+# Render hex color codes to color blocks in terminal
+renderxcolor() {
+    # Check if help option is provided or no color is specified
+    if [ "$1" == "" ] || [ "$1" == "--h" ] || [ "$1" == "--help" ]; then
+        echo "Usage: renderxcolor [\"color1\"] [\"color2\"] [\"color3\"] ..."
+        echo "Do not put the hash symbol in front of the hex codes"
+        echo "Example: renderxcolor \"FF0000\" \"00FF00\" \"0000FF\""
+        echo "To fetch color variants: renderxcolor \"color\" --variant [num_variants]"
+    elif [ "$2" == "--variant" ]; then
+        # Check if --variant option is provided
+        if [ "$#" -lt 2 ]; then
+            echo "Error: Provide a color and use --variant option."
+            return 1
+        fi
+        num_variants=10  # Default number of variants
+        if [ "$#" -eq 3 ]; then
+            num_variants="$3"
+        fi
+        # Call the generate_color_variants function with provided arguments
+        generate_color_variants "$1" "$num_variants"
+    else
+        # Render the provided hex colors as color blocks in the terminal
+        perl -e 'foreach $a(@ARGV){print "\e[48;2;".join(";",unpack("C*",pack("H*",$a)))."m       \e[49m "};print "\n"' "$@"
+    fi
+}
+
+# Call the renderxcolor function with provided arguments
+renderxcolor "$@"
+
+This function takes one or more hex color codes as arguments and displays colored blocks in the terminal corresponding to each color code.
+
+Save the changes and exit the text editor.
+
+Step 3: Refreshing .bashrc
+
+After modifying your .bashrc file, you need to refresh it to apply the changes to your current shell session. Run the following command:
+
+source ~/.bashrc
+
+This command reloads the .bashrc file, making any changes immediately available in your current shell session.
+
+Step 5: Using the Function
+
+Once the renderxcolor function is added to your .bashrc and sourced, you can use it to render hex color codes and create color variants directly in your terminal. Here's some examples of usage:
+
+renderxcolor "FF0000" "00FF00" "0000FF"
+This command will display three colored blocks in red, green, and blue respectively.
+
+renderxcolor "FF0000" --variant 20 
+This command will display twenty colored blocks that are closed variants of the provided color.
+
+You've now learned how to render hex color codes as colored blocks in the terminal and use hex color codes to create variants using a Bash function and Perl. By adding this function to your .bashrc file, you can easily visualize colors directly within your command line environment. 
+
+Enjoy experimenting with different color combinations!
